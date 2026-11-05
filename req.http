@@ -1,0 +1,477 @@
+@base = http://localhost:3000
+@otp = 123456
+
+### ===== 1. REGISTER =====
+
+### Register (user)
+POST {{base}}/register
+Content-Type: application/json
+
+{
+  "fullname": "Madina",
+  "email": "user@mail.com",
+  "password": "abc123"
+}
+
+### Register (admin, keyin Atlas da role: admin qiling)
+POST {{base}}/register
+Content-Type: application/json
+
+{
+  "fullname": "Admin",
+  "email": "admin@mail.com",
+  "password": "abc123"
+}
+
+### Register (manager, keyin Atlas da role: manager qiling)
+POST {{base}}/register
+Content-Type: application/json
+
+{
+  "fullname": "Manager",
+  "email": "manager@mail.com",
+  "password": "abc123"
+}
+
+### Register - role yuborsa ham user bo'ladi (201, role: user)
+POST {{base}}/register
+Content-Type: application/json
+
+{
+  "fullname": "Hacker",
+  "email": "hacker@mail.com",
+  "password": "abc123",
+  "role": "admin"
+}
+
+### Register - bir xil email (409)
+POST {{base}}/register
+Content-Type: application/json
+
+{
+  "fullname": "Madina",
+  "email": "user@mail.com",
+  "password": "abc123"
+}
+
+### Register - validation xato (400)
+POST {{base}}/register
+Content-Type: application/json
+
+{
+  "fullname": "",
+  "email": "notogri",
+  "password": "123"
+}
+
+### ===== 2. LOGIN (token avtomatik saqlanadi) =====
+### Login qilishdan oldin Atlas da admin va manager rolini o'zgartiring!
+
+### Login (user)
+POST {{base}}/login
+Content-Type: application/json
+
+{
+  "email": "user@mail.com",
+  "password": "abc123"
+}
+
+> {%
+    client.global.set("userToken", response.body.token);
+%}
+
+### Login (admin)
+POST {{base}}/login
+Content-Type: application/json
+
+{
+  "email": "admin@mail.com",
+  "password": "abc123"
+}
+
+> {%
+    client.global.set("adminToken", response.body.token);
+%}
+
+### Login (manager)
+POST {{base}}/login
+Content-Type: application/json
+
+{
+  "email": "manager@mail.com",
+  "password": "abc123"
+}
+
+> {%
+    client.global.set("managerToken", response.body.token);
+%}
+
+### Login - parol noto'g'ri (401)
+POST {{base}}/login
+Content-Type: application/json
+
+{
+  "email": "user@mail.com",
+  "password": "xato123"
+}
+
+### Login - email topilmadi (401)
+POST {{base}}/login
+Content-Type: application/json
+
+{
+  "email": "yoq@mail.com",
+  "password": "abc123"
+}
+
+### ===== 3. PROFILE =====
+
+### Profile (200, password yo'q)
+GET {{base}}/profile
+Authorization: Bearer {{userToken}}
+
+### Profile - tokensiz (401)
+GET {{base}}/profile
+
+### Profile - noto'g'ri token (401)
+GET {{base}}/profile
+Authorization: Bearer abc.def.ghi
+
+### ===== 4. COURIERS =====
+
+### Kuryer yaratish - admin (201, courierId avtomatik saqlanadi)
+POST {{base}}/couriers
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "fullname": "Ali Valiyev",
+  "email": "ali@mail.com",
+  "phone": "+998901234567",
+  "vehicle": "bike"
+}
+
+> {%
+    client.global.set("courierId", response.body._id);
+%}
+
+### Kuryer yaratish - user (403)
+POST {{base}}/couriers
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "fullname": "Ali Valiyev",
+  "email": "ali@mail.com",
+  "phone": "+998901234567",
+  "vehicle": "bike"
+}
+
+### Kuryer yaratish - manager (403)
+POST {{base}}/couriers
+Authorization: Bearer {{managerToken}}
+Content-Type: application/json
+
+{
+  "fullname": "Ali Valiyev",
+  "email": "ali@mail.com",
+  "phone": "+998901234567",
+  "vehicle": "bike"
+}
+
+### Kuryer yaratish - validation xato (400)
+POST {{base}}/couriers
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "fullname": "A",
+  "email": "notogri"
+}
+
+### Barcha kuryerlar - user (200)
+GET {{base}}/couriers
+Authorization: Bearer {{userToken}}
+
+### Barcha kuryerlar - tokensiz (401)
+GET {{base}}/couriers
+
+### Bitta kuryer (200)
+GET {{base}}/couriers/{{courierId}}
+Authorization: Bearer {{userToken}}
+
+### Kuryer - noto'g'ri ID (400)
+GET {{base}}/couriers/123
+Authorization: Bearer {{userToken}}
+
+### Kuryer - topilmadi (404)
+GET {{base}}/couriers/64b7f0f2a1b2c3d4e5f60718
+Authorization: Bearer {{userToken}}
+
+### Kuryerni yangilash - admin (200)
+PUT {{base}}/couriers/{{courierId}}
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "vehicle": "car"
+}
+
+### Kuryerni yangilash - user (403)
+PUT {{base}}/couriers/{{courierId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "vehicle": "car"
+}
+
+### Kuryerni yangilash - topilmadi (404)
+PUT {{base}}/couriers/64b7f0f2a1b2c3d4e5f60718
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "vehicle": "car"
+}
+
+### Kuryerni o'chirish - user (403)
+DELETE {{base}}/couriers/{{courierId}}
+Authorization: Bearer {{userToken}}
+
+### Kuryerni o'chirish - noto'g'ri ID (400)
+DELETE {{base}}/couriers/123
+Authorization: Bearer {{adminToken}}
+
+### ===== 5. ORDERS =====
+
+### Buyurtma yaratish - manager (201, orderId avtomatik saqlanadi)
+POST {{base}}/orders
+Authorization: Bearer {{managerToken}}
+Content-Type: application/json
+
+{
+  "customerName": "Vali Aliyev",
+  "address": "Toshkent, Chilonzor 5",
+  "price": 50000,
+  "courier": "{{courierId}}"
+}
+
+> {%
+    client.global.set("orderId", response.body._id);
+%}
+
+### Buyurtma yaratish - admin, status va isPaid bilan (201)
+POST {{base}}/orders
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "customerName": "Sardor Karimov",
+  "address": "Toshkent, Yunusobod 12",
+  "price": 85000,
+  "status": "delivered",
+  "isPaid": true,
+  "courier": "{{courierId}}"
+}
+
+### Buyurtma yaratish - user (403)
+POST {{base}}/orders
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "customerName": "Vali Aliyev",
+  "address": "Toshkent, Chilonzor 5",
+  "price": 50000
+}
+
+### Buyurtma - narx 0 (400)
+POST {{base}}/orders
+Authorization: Bearer {{managerToken}}
+Content-Type: application/json
+
+{
+  "customerName": "Vali Aliyev",
+  "address": "Toshkent, Chilonzor 5",
+  "price": 0
+}
+
+### Buyurtma - status noto'g'ri (400)
+POST {{base}}/orders
+Authorization: Bearer {{managerToken}}
+Content-Type: application/json
+
+{
+  "customerName": "Vali Aliyev",
+  "address": "Toshkent, Chilonzor 5",
+  "price": 50000,
+  "status": "yolda"
+}
+
+### Buyurtma - courier bazada yo'q (404)
+POST {{base}}/orders
+Authorization: Bearer {{managerToken}}
+Content-Type: application/json
+
+{
+  "customerName": "Vali Aliyev",
+  "address": "Toshkent, Chilonzor 5",
+  "price": 50000,
+  "courier": "64b7f0f2a1b2c3d4e5f60718"
+}
+
+### Buyurtma - courier ID noto'g'ri (400)
+POST {{base}}/orders
+Authorization: Bearer {{managerToken}}
+Content-Type: application/json
+
+{
+  "customerName": "Vali Aliyev",
+  "address": "Toshkent, Chilonzor 5",
+  "price": 50000,
+  "courier": "123"
+}
+
+### Barcha buyurtmalar - courier faqat fullname va phone (200)
+GET {{base}}/orders
+Authorization: Bearer {{userToken}}
+
+### Bitta buyurtma - courier populate (200)
+GET {{base}}/orders/{{orderId}}
+Authorization: Bearer {{userToken}}
+
+### Buyurtma - noto'g'ri ID (400)
+GET {{base}}/orders/123
+Authorization: Bearer {{userToken}}
+
+### Buyurtma - topilmadi (404)
+GET {{base}}/orders/64b7f0f2a1b2c3d4e5f60718
+Authorization: Bearer {{userToken}}
+
+### Statistika - manager (200)
+GET {{base}}/orders/stats
+Authorization: Bearer {{managerToken}}
+
+### Statistika - admin (200)
+GET {{base}}/orders/stats
+Authorization: Bearer {{adminToken}}
+
+### Statistika - user (403)
+GET {{base}}/orders/stats
+Authorization: Bearer {{userToken}}
+
+### Buyurtmani yangilash - manager (200)
+PUT {{base}}/orders/{{orderId}}
+Authorization: Bearer {{managerToken}}
+Content-Type: application/json
+
+{
+  "status": "on_the_way",
+  "isPaid": true
+}
+
+### Buyurtmani yangilash - status noto'g'ri (400)
+PUT {{base}}/orders/{{orderId}}
+Authorization: Bearer {{managerToken}}
+Content-Type: application/json
+
+{
+  "status": "nomalum"
+}
+
+### Buyurtmani yangilash - user (403)
+PUT {{base}}/orders/{{orderId}}
+Authorization: Bearer {{userToken}}
+Content-Type: application/json
+
+{
+  "price": 60000
+}
+
+### Buyurtmani yangilash - topilmadi (404)
+PUT {{base}}/orders/64b7f0f2a1b2c3d4e5f60718
+Authorization: Bearer {{adminToken}}
+Content-Type: application/json
+
+{
+  "price": 60000
+}
+
+### Buyurtmani o'chirish - manager (403)
+DELETE {{base}}/orders/{{orderId}}
+Authorization: Bearer {{managerToken}}
+
+### Buyurtmani o'chirish - noto'g'ri ID (400)
+DELETE {{base}}/orders/123
+Authorization: Bearer {{adminToken}}
+
+### Buyurtmani o'chirish - admin (200)
+DELETE {{base}}/orders/{{orderId}}
+Authorization: Bearer {{adminToken}}
+
+### Kuryerni o'chirish - admin (200, buyurtmalardan keyin)
+DELETE {{base}}/couriers/{{courierId}}
+Authorization: Bearer {{adminToken}}
+
+### ===== 6. OTP =====
+
+### OTP yuborish (200, emailga kod keladi)
+POST {{base}}/send-otp
+Content-Type: application/json
+
+{
+  "email": "user@mail.com"
+}
+
+### OTP yuborish - foydalanuvchi topilmadi (404)
+POST {{base}}/send-otp
+Content-Type: application/json
+
+{
+  "email": "yoq@mail.com"
+}
+
+### OTP yuborish - email noto'g'ri (400)
+POST {{base}}/send-otp
+Content-Type: application/json
+
+{
+  "email": "notogri"
+}
+
+### OTP tasdiqlash - emailga kelgan kodni tepadagi @otp ga yozing (200)
+POST {{base}}/verify-otp
+Content-Type: application/json
+
+{
+  "email": "user@mail.com",
+  "otp": "{{otp}}"
+}
+
+### OTP tasdiqlash - qayta ishlatish yoki noto'g'ri kod (400)
+POST {{base}}/verify-otp
+Content-Type: application/json
+
+{
+  "email": "user@mail.com",
+  "otp": "000000"
+}
+
+### OTP tasdiqlash - foydalanuvchi topilmadi (404)
+POST {{base}}/verify-otp
+Content-Type: application/json
+
+{
+  "email": "yoq@mail.com",
+  "otp": "123456"
+}
+
+### OTP tasdiqlash - 6 xonali emas (400)
+POST {{base}}/verify-otp
+Content-Type: application/json
+
+{
+  "email": "user@mail.com",
+  "otp": "12"
+}

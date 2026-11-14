@@ -5,7 +5,6 @@ const { authMiddleware } = require("../middlewares/authMiddleware");
 const { authorizeRoles } = require("../middlewares/roleMiddleware");
 
 router.get("/couriers",
-    authMiddleware,
     courierController.getCouriers
 );
 
